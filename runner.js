@@ -260,8 +260,10 @@ class CyberRoadGame {
         document.getElementById('finalScore').textContent     = this.score;
         document.getElementById('finalDistance').textContent  = distKm+'km';
         document.getElementById('correctAnswers').textContent = `${this.correctAnswers}/${this.totalQuestions}`;
-        const best=parseInt(localStorage.getItem('cautio-best')||'0');
-        if (this.score>best) localStorage.setItem('cautio-best', this.score);
+        const best=parseInt(localStorage.getItem('cautio-best-runner')||'0');
+        if (this.score>best) localStorage.setItem('cautio-best-runner', this.score);
+        const prevDist=parseInt(localStorage.getItem('cautio-total-distance')||'0');
+        localStorage.setItem('cautio-total-distance', prevDist+distKm);
         localStorage.setItem('cautio-runner-result', JSON.stringify({
             score: this.score, distance: distKm,
             correct: this.correctAnswers, total: this.totalQuestions
