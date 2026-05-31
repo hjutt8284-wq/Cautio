@@ -1175,6 +1175,8 @@
         localStorage.setItem('cautio-phishing-result', JSON.stringify({
             score, correct, total: deck.length, percentage: pct
         }));
+        const bestPhish = parseInt(localStorage.getItem('cautio-best-phishing-score') || '0');
+        if (pct > bestPhish) localStorage.setItem('cautio-best-phishing-score', pct.toString());
 
         // Update leaderboard
         saveToLeaderboard();
