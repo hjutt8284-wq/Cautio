@@ -361,9 +361,8 @@
             localStorage.getItem('cautio-best-runner') || '0';
         document.getElementById('best-quiz-score').textContent =
             (localStorage.getItem('cautio-best-quiz-score') || '0') + '%';
-        const phishBest = JSON.parse(localStorage.getItem('cautio-phishing-result') || 'null');
         document.getElementById('best-phishing-score').textContent =
-            (phishBest ? phishBest.percentage : '0') + '%';
+            (localStorage.getItem('cautio-best-phishing-score') || '0') + '%';
         document.getElementById('total-distance').textContent =
             (localStorage.getItem('cautio-total-distance') || '0') + 'km';
         renderLeaderboard();
