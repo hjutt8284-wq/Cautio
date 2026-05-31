@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUTIO - Runner Mode</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="runner-game">
+    <div class="game-container">
+        <div class="hud">
+            <div class="hud-left">
+                <div class="hud-item">
+                    <span class="hud-label">Score:</span>
+                    <span class="hud-value" id="score">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">Distance:</span>
+                    <span class="hud-value" id="distance">0km</span>
+                </div>
+            </div>
+            <div class="hud-center">
+                <div class="lives-container">
+                    <span class="hud-label">Lives:</span>
+                    <div class="hearts" id="hearts">
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-item">
+                    <span class="hud-label">Correct:</span>
+                    <span class="hud-value" id="size">0/0</span>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="1200" height="600"></canvas>
+
+        <div class="controls-hint" id="controlsHint" style="display:none;"></div>
+
+        <div class="game-over" id="gameOver" style="display: none;">
+            <div class="game-over-card">
+                <h2>Game Over!</h2>
+                <div class="final-stats">
+                    <div class="stat">
+                        <span class="stat-label">Final Score:</span>
+                        <span class="stat-value" id="finalScore">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Distance Traveled:</span>
+                        <span class="stat-value" id="finalDistance">0km</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Questions Correct:</span>
+                        <span class="stat-value" id="correctAnswers">0</span>
+                    </div>
+                </div>
+                <div class="game-over-buttons">
+                    <button class="restart-btn" onclick="restartGame()">Play Again</button>
+                    <button class="menu-btn" onclick="goToMenu()">Main Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz mode prompt overlay -->
+        <div class="quiz-prompt-overlay" id="quizPrompt" style="display:none;">
+            <div class="quiz-prompt-card">
+                <div class="quiz-prompt-icon">🧠</div>
+                <h2>Runner Complete!</h2>
+                <div class="quiz-prompt-stats">
+                    <span id="promptScore">Score: 0</span>
+                    <span id="promptAnswers">Correct: 0/0</span>
+                </div>
+                <p>Want to test your knowledge further with the <strong>Quiz Mode</strong>?<br>
+                   Answer 35 timed questions to complete your cyber awareness report.</p>
+                <div class="quiz-prompt-buttons">
+                    <button class="prompt-yes-btn" onclick="promptYes()">Yes, Take Quiz! →</button>
+                    <button class="prompt-no-btn" onclick="promptNo()">No, See My Results</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data/questions.js"></script>
+    <script src="runner.js"></script>
+</body>
+</html>

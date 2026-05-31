@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUTIO - Your Cyber Awareness Report</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .quiz-nudge {
+            background: linear-gradient(135deg, rgba(0,40,80,0.7), rgba(0,20,50,0.7));
+            border: 1px solid #00ffff44;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin: 0 auto 22px;
+            max-width: 640px;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .quiz-nudge p {
+            color: #88bbcc;
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            margin: 0 0 10px;
+            line-height: 1.6;
+        }
+        .quiz-nudge-btn {
+            background: linear-gradient(135deg, #003344, #004455);
+            border: 1px solid #00ffff88;
+            border-radius: 8px;
+            color: #00ffff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.78rem;
+            padding: 10px 22px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: box-shadow 0.15s, transform 0.15s;
+        }
+        .quiz-nudge-btn:hover { box-shadow: 0 0 18px #00ffff44; transform: translateY(-2px); }
+
+        .cert-section {
+            text-align: center;
+            margin: 0 auto 22px;
+            padding: 20px;
+            max-width: 480px;
+            background: linear-gradient(135deg, rgba(0,30,0,0.6), rgba(0,50,0,0.4));
+            border: 1px solid #00ff4155;
+            border-radius: 14px;
+        }
+        .cert-section p { color: #556677; font-family: sans-serif; font-size: 0.78rem; margin: 8px 0 0; }
+        .cert-btn {
+            background: linear-gradient(135deg, #002200, #003300);
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            color: #00ff41;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            padding: 14px 32px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: box-shadow 0.15s, transform 0.15s;
+        }
+        .cert-btn:hover { box-shadow: 0 0 28px #00ff4166; transform: translateY(-2px); }
+        .cert-locked {
+            text-align: center;
+            margin: 0 auto 22px;
+            padding: 16px 24px;
+            max-width: 480px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #ffffff11;
+            border-radius: 14px;
+            color: #445566;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body class="results-page">
+    <div class="stars"></div>
+    <div class="results-container">
+
+        <header class="results-header">
+            <h1 class="logo">CAUTIO</h1>
+            <p class="results-subtitle">Cyber Awareness Report</p>
+        </header>
+
+        <!-- Agent card -->
+        <div class="agent-card">
+            <div class="agent-avatar" id="agentAvatar">🛡️</div>
+            <div class="agent-info">
+                <div class="agent-name" id="agentName">Agent</div>
+                <div class="agent-date" id="agentDate"></div>
+            </div>
+            <div class="level-badge" id="levelBadge">
+                <div class="level-icon" id="levelIcon">⭐</div>
+                <div class="level-text" id="levelText">CALCULATING...</div>
+            </div>
+        </div>
+
+        <!-- Level description -->
+        <div class="level-description-card" id="levelDescCard">
+            <p id="levelDesc"></p>
+        </div>
+
+        <!-- Scores grid -->
+        <div class="scores-grid">
+            <div class="score-card runner-score-card" id="runnerCard">
+                <div class="score-card-header">
+                    <span class="score-card-icon">🏃‍♂️</span>
+                    <span class="score-card-title">Runner Mode</span>
+                </div>
+                <div class="score-card-body" id="runnerBody">
+                    <div class="big-score" id="runnerScore">—</div>
+                    <div class="score-details" id="runnerDetails"></div>
+                </div>
+                <div class="score-card-footer" id="runnerFooter"></div>
+            </div>
+
+            <div class="score-card quiz-score-card" id="quizCard">
+                <div class="score-card-header">
+                    <span class="score-card-icon">🧠</span>
+                    <span class="score-card-title">Quiz Mode</span>
+                </div>
+                <div class="score-card-body" id="quizBody">
+                    <div class="big-score" id="quizScore">—</div>
+                    <div class="score-details" id="quizDetails"></div>
+                </div>
+                <div class="score-card-footer" id="quizFooter"></div>
+            </div>
+            <div class="score-card" id="phishCard" style="border-color:#ff446655;background:linear-gradient(160deg,rgba(26,13,26,0.8),rgba(18,8,24,0.8));">
+                <div class="score-card-header">
+                    <span class="score-card-icon">🎣</span>
+                    <span class="score-card-title">Phishing Mode</span>
+                </div>
+                <div class="score-card-body" id="phishBody">
+                    <div class="big-score" id="phishScore">—</div>
+                    <div class="score-details" id="phishDetails"></div>
+                </div>
+                <div class="score-card-footer" id="phishFooter"></div>
+            </div>
+        </div>
+
+        <!-- Combined score bar -->
+        <div class="combined-bar-card" id="combinedBarCard">
+            <div class="combined-bar-label">Overall Cyber Awareness Score</div>
+            <div class="combined-bar-track">
+                <div class="combined-bar-fill" id="combinedBarFill"></div>
+                <div class="combined-bar-pct" id="combinedBarPct">0%</div>
+            </div>
+            <div class="combined-bar-zones">
+                <span>Beginner</span><span>Medium</span><span>Expert</span>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips-card" id="tipsCard">
+            <h3>💡 Key Takeaways</h3>
+            <ul class="tips-list" id="tipsList"></ul>
+        </div>
+
+        <!-- Quiz nudge (shown when quiz not played) -->
+        <div class="quiz-nudge" id="quizNudge" style="display:none;">
+            <p>🧠 &nbsp; Complete the <b>Quiz Mode</b> to unlock your full Cyber Awareness score and get an <b>Expert Certificate</b> if you qualify!</p>
+            <button class="quiz-nudge-btn" onclick="window.location.href='quiz.html'">Take Quiz Now →</button>
+        </div>
+
+        <!-- Certificate section -->
+        <div class="cert-section" id="certSection" style="display:none;">
+            <button class="cert-btn" onclick="downloadCertificate()">🏅 &nbsp; Download Certificate</button>
+            <p>Awarded for achieving Expert level — well done!</p>
+        </div>
+        <div class="cert-locked" id="certLocked" style="display:none;">
+            🔒 &nbsp; Certificate unlocks at Expert level. Complete the Quiz Mode and score ≥70% overall.
+        </div>
+
+        <!-- Actions -->
+        <div class="results-actions">
+            <button class="action-btn runner-btn" onclick="window.location.href='runner.html'">Play Runner Again</button>
+            <button class="action-btn quiz-btn"   onclick="window.location.href='quiz.html'">Retake Quiz</button>
+            <button class="action-btn" style="background:linear-gradient(135deg,#3a0010,#550018);color:#ff4466;border:1px solid #ff244455;" onclick="window.location.href='phishing.html'">🎣 Phishing Mode</button>
+            <button class="action-btn menu-btn"   onclick="sessionStorage.setItem('cautio-returning','1'); window.location.href='index.html';">Main Menu</button>
+        </div>
+
+    </div>
+
+    <script>
+    // ── Data ─────────────────────────────────────────────────────────────────
+    const username     = localStorage.getItem('cautio-username') || 'Agent';
+    const runnerResult = JSON.parse(localStorage.getItem('cautio-runner-result')   || 'null');
+    const quizResult   = JSON.parse(localStorage.getItem('cautio-quiz-result')     || 'null');
+    const phishResult  = JSON.parse(localStorage.getItem('cautio-phishing-result') || 'null');
+
+    // ── Level calculator ──────────────────────────────────────────────────────
+    // Each mode contributes exactly 33.33% of the total score.
+    // Unplayed modes count as 0%, so playing 1 mode maxes at 33.33%, 2 modes at 66.66%, all 3 at 100%.
+    function getCombinedPct() {
+        const runnerPct = runnerResult && runnerResult.total > 0
+            ? Math.round((runnerResult.correct / runnerResult.total) * 100) : 0;
+        const quizPct   = quizResult   ? quizResult.percentage   : 0;
+        const phishPct  = phishResult  ? phishResult.percentage  : 0;
+        return Math.round((runnerPct + quizPct + phishPct) / 3);
+    }
+
+    function calcLevel(pct) {
+        if (pct >= 70) return {
+            label: 'EXPERT', icon: '🏆', color: '#00ff41', shadow: '#00ff41',
+            desc: `Outstanding, ${username}! You demonstrate strong cybersecurity awareness. You can identify threats, apply best practices, and make smart security decisions. Keep sharpening your skills — the cyber world keeps evolving.`
+        };
+        if (pct >= 40) return {
+            label: 'MEDIUM', icon: '⭐', color: '#ffaa00', shadow: '#ffaa00',
+            desc: `Good effort, ${username}! You have a solid foundation in cybersecurity but there are areas to strengthen. Review phishing detection, password management, and safe browsing to level up your defenses.`
+        };
+        return {
+            label: 'BEGINNER', icon: '🌱', color: '#ff6644', shadow: '#ff6644',
+            desc: `Keep going, ${username}! Everyone starts somewhere. Focus on recognising common threats like phishing, safe password habits, and avoiding risky links to build a strong foundation.`
+        };
+    }
+
+    const ALL_TIPS = [
+        'Never click links in unsolicited emails — always go directly to websites.',
+        'Use a unique, strong password for every account. Consider a password manager.',
+        'Enable two-factor authentication (2FA) on all important accounts.',
+        'Keep your software and OS updated to patch vulnerabilities.',
+        'Avoid public Wi-Fi for sensitive activities without a VPN.',
+        'Be suspicious of urgent requests for personal info — legitimate services won\'t rush you.',
+        'Always verify the sender\'s email address before trusting any message.',
+        'Back up your data regularly to protect against ransomware attacks.',
+        'Lock your devices when leaving them unattended, even briefly.',
+        'Think before you share — oversharing personal info online enables social engineering.'
+    ];
+
+    function pickTips(pct) {
+        if (pct >= 70) return ALL_TIPS.slice(0, 3);
+        if (pct >= 40) return ALL_TIPS.slice(2, 6);
+        return ALL_TIPS.slice(0, 6);
+    }
+
+    // ── Leaderboard save ──────────────────────────────────────────────────────
+    function saveToLeaderboard(levelLabel) {
+        const LB_KEY = 'cautio-leaderboard';
+        let entries = [];
+        try { entries = JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch(e){}
+        const runnerScore = runnerResult ? runnerResult.score    : 0;
+        const quizPct     = quizResult   ? quizResult.percentage : 0;
+        const phishPct    = phishResult  ? phishResult.percentage: 0;
+        const idx = entries.findIndex(e => e.name.toLowerCase() === username.toLowerCase());
+        const entry = { name: username, runnerScore, quizPct, phishPct, level: levelLabel, date: new Date().toLocaleDateString() };
+        if (idx >= 0) {
+            entry.runnerScore = Math.max(entry.runnerScore, entries[idx].runnerScore||0);
+            entry.quizPct     = Math.max(entry.quizPct,     entries[idx].quizPct||0);
+            entry.phishPct    = Math.max(entry.phishPct,    entries[idx].phishPct||0);
+            entries[idx] = entry;
+        } else { entries.push(entry); }
+        entries.sort((a,b) => (b.runnerScore + b.quizPct*10 + (b.phishPct||0)*10) - (a.runnerScore + a.quizPct*10 + (a.phishPct||0)*10));
+        localStorage.setItem(LB_KEY, JSON.stringify(entries.slice(0, 20)));
+    }
+
+    // ── Certificate generator ─────────────────────────────────────────────────
+    function downloadCertificate() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 900; canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+
+        // Background
+        const bg = ctx.createLinearGradient(0, 0, 900, 640);
+        bg.addColorStop(0, '#020818'); bg.addColorStop(1, '#0a1430');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, 900, 640);
+
+        // Outer border
+        ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 4;
+        ctx.strokeRect(18, 18, 864, 604);
+        ctx.strokeStyle = '#00ffff33'; ctx.lineWidth = 1;
+        ctx.strokeRect(28, 28, 844, 584);
+
+        // Corner accents
+        [[18,18],[882,18],[18,622],[882,622]].forEach(([cx,cy]) => {
+            const dx = cx < 450 ? 40 : -40, dy = cy < 320 ? 40 : -40;
+            ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + dy); ctx.lineTo(cx, cy); ctx.lineTo(cx + dx, cy);
+            ctx.stroke();
+        });
+
+        // Logo
+        ctx.fillStyle = '#00ffff'; ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 20;
+        ctx.font = 'bold 52px Orbitron, monospace'; ctx.textAlign = 'center';
+        ctx.fillText('CAUTIO', 450, 100); ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#4488aa'; ctx.font = '14px Orbitron, monospace';
+        ctx.fillText('CYBERSECURITY AWARENESS TRAINING', 450, 128);
+
+        // Title
+        ctx.fillStyle = '#aaccdd'; ctx.font = '22px Orbitron, monospace';
+        ctx.fillText('CERTIFICATE OF EXCELLENCE', 450, 196);
+
+        // Divider
+        ctx.strokeStyle = '#00ffff44'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(120, 214); ctx.lineTo(780, 214); ctx.stroke();
+
+        // Body
+        ctx.fillStyle = '#778899'; ctx.font = '15px sans-serif';
+        ctx.fillText('This certifies that', 450, 258);
+
+        ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#00aaff'; ctx.shadowBlur = 8;
+        ctx.font = 'bold 38px Orbitron, monospace';
+        ctx.fillText(username, 450, 312); ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#778899'; ctx.font = '14px sans-serif';
+        ctx.fillText('has achieved Expert level in cybersecurity awareness through the CAUTIO training program,', 450, 352);
+        ctx.fillText('demonstrating strong knowledge of cyber threats, best practices, and digital safety.', 450, 374);
+
+        // Level
+        ctx.fillStyle = '#00ff41'; ctx.shadowColor = '#00ff41'; ctx.shadowBlur = 16;
+        ctx.font = 'bold 30px Orbitron, monospace';
+        ctx.fillText('🏆  EXPERT  🏆', 450, 428); ctx.shadowBlur = 0;
+
+        // Scores
+        const rScore = runnerResult ? runnerResult.score.toLocaleString() : 'N/A';
+        const qPct   = quizResult   ? quizResult.percentage + '%' : 'N/A';
+        const combinedPct = getCombinedPct();
+        ctx.fillStyle = '#445566'; ctx.font = '13px Orbitron, monospace';
+        const phishStr = phishResult ? phishResult.percentage + '%' : 'N/A';
+        ctx.fillText(`Runner: ${rScore}  |  Quiz: ${qPct}  |  Phishing: ${phishStr}  |  Overall: ${combinedPct}%`, 450, 468);
+
+        // Date
+        ctx.fillStyle = '#334455'; ctx.font = '13px sans-serif';
+        ctx.fillText('Issued: ' + new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}), 450, 506);
+
+        // Seal
+        ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.arc(450, 575, 40, 0, Math.PI*2); ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#00ff41'; ctx.shadowColor = '#00ff41'; ctx.shadowBlur = 10;
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText('✓', 450, 584); ctx.shadowBlur = 0;
+
+        const link = document.createElement('a');
+        link.download = 'CAUTIO_Expert_Certificate_' + username.replace(/\s+/g,'_') + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function render() {
+        const combinedPct = getCombinedPct();
+        const level       = calcLevel(combinedPct);
+        const allPlayed   = !!runnerResult && !!quizResult && !!phishResult;
+
+        // Agent card
+        document.getElementById('agentName').textContent = username;
+        document.getElementById('agentDate').textContent = new Date().toLocaleDateString('en-GB',
+            {day:'numeric', month:'long', year:'numeric'});
+
+        // Level badge
+        const badge = document.getElementById('levelBadge');
+        badge.style.borderColor = level.color;
+        badge.style.boxShadow   = `0 0 20px ${level.shadow}44`;
+        document.getElementById('levelText').textContent = level.label;
+        document.getElementById('levelText').style.color = level.color;
+        document.getElementById('levelIcon').textContent = level.icon;
+
+        document.getElementById('levelDesc').textContent           = level.desc;
+        document.getElementById('levelDescCard').style.borderColor = level.color + '55';
+        document.getElementById('levelDescCard').style.background  = level.color + '11';
+
+        // ── Runner card — always visible ──
+        if (runnerResult) {
+            const rPct = runnerResult.total > 0
+                ? Math.round(runnerResult.correct / runnerResult.total * 100) : 0;
+            document.getElementById('runnerScore').textContent = runnerResult.score.toLocaleString();
+            document.getElementById('runnerDetails').innerHTML =
+                `<span>Distance: <b>${runnerResult.distance}km</b></span>` +
+                `<span>Questions: <b>${runnerResult.correct}/${runnerResult.total}</b> correct</span>`;
+            document.getElementById('runnerFooter').textContent = `Answer accuracy: ${rPct}% (contributes ${Math.round(rPct/3)}% to total)`;
+        } else {
+            document.getElementById('runnerScore').textContent  = '0%';
+            document.getElementById('runnerDetails').innerHTML  = '<span>Not played — counts as 0%</span>';
+            document.getElementById('runnerFooter').textContent = 'Contributes 0 / 33.33% to total';
+            document.getElementById('runnerBody').style.opacity = '0.5';
+        }
+
+        // ── Quiz card — always visible ──
+        if (quizResult) {
+            document.getElementById('quizScore').textContent  = quizResult.percentage + '%';
+            document.getElementById('quizDetails').innerHTML  =
+                `<span>Points: <b>${quizResult.score}</b></span>` +
+                `<span>Correct: <b>${quizResult.correct}/${quizResult.total}</b></span>`;
+            document.getElementById('quizFooter').textContent =
+                `${quizResult.percentage >= 70 ? '🏅 Well done!' : quizResult.percentage >= 40 ? '👍 Good effort' : '📚 Keep studying'} (contributes ${Math.round(quizResult.percentage/3)}% to total)`;
+        } else {
+            document.getElementById('quizScore').textContent  = '0%';
+            document.getElementById('quizDetails').innerHTML  = '<span>Not played — counts as 0%</span>';
+            document.getElementById('quizFooter').textContent = 'Contributes 0 / 33.33% to total';
+            document.getElementById('quizBody').style.opacity = '0.5';
+        }
+
+        // ── Phishing card — always visible ──
+        if (phishResult) {
+            document.getElementById('phishScore').textContent  = phishResult.percentage + '%';
+            document.getElementById('phishScore').style.color  = '#ff4466';
+            document.getElementById('phishDetails').innerHTML  =
+                `<span>Points: <b>${phishResult.score}</b></span>` +
+                `<span>Correct: <b>${phishResult.correct}/${phishResult.total}</b></span>`;
+            document.getElementById('phishFooter').textContent =
+                `${phishResult.percentage >= 70 ? '🔍 Great detection!' : phishResult.percentage >= 40 ? '👍 Getting there' : '📚 More training needed'} (contributes ${Math.round(phishResult.percentage/3)}% to total)`;
+        } else {
+            document.getElementById('phishScore').textContent  = '0%';
+            document.getElementById('phishDetails').innerHTML  = '<span>Not played — counts as 0%</span>';
+            document.getElementById('phishFooter').textContent = 'Contributes 0 / 33.33% to total';
+            document.getElementById('phishBody').style.opacity = '0.5';
+        }
+
+        // Progress bar
+        const barFill = document.getElementById('combinedBarFill');
+        barFill.style.background = level.color;
+        barFill.style.boxShadow  = `0 0 10px ${level.shadow}`;
+        document.getElementById('combinedBarPct').textContent = combinedPct + '%';
+        setTimeout(() => { barFill.style.width = combinedPct + '%'; }, 200);
+
+        // Tips
+        document.getElementById('tipsList').innerHTML =
+            pickTips(combinedPct).map(t => `<li>${t}</li>`).join('');
+
+        // ── Certificate: only if ALL 3 modes played AND overall ≥ 70% ──
+        if (allPlayed && combinedPct >= 70) {
+            document.getElementById('certSection').style.display = 'block';
+        } else {
+            const msg = !allPlayed
+                ? `🔒 Certificate unlocks when all 3 modes are played and overall score is ≥70%. You need to complete: ${[!runnerResult && 'Runner', !quizResult && 'Quiz', !phishResult && 'Phishing'].filter(Boolean).join(', ')}.`
+                : `🔒 Certificate requires ≥70% overall. Your current score is ${combinedPct}% — keep training!`;
+            document.getElementById('certLocked').textContent = msg;
+            document.getElementById('certLocked').style.display = 'block';
+        }
+
+        // Hide quiz nudge (flow handles progression)
+        document.getElementById('quizNudge').style.display = 'none';
+
+        // Save to leaderboard
+        saveToLeaderboard(level.label);
+    }
+
+    // ── Stars & init ──────────────────────────────────────────────────────────
+    function createStars() {
+        const sc = document.querySelector('.stars');
+        if (!sc) return;
+        for (let i = 0; i < 80; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.style.left              = Math.random() * 100 + '%';
+            s.style.top               = Math.random() * 100 + '%';
+            s.style.animationDelay    = Math.random() * 3 + 's';
+            s.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            sc.appendChild(s);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        createStars();
+        render();
+    });
+    </script>
+</body>
+</html>

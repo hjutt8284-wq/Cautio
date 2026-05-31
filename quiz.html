@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUTIO - Quiz Mode</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="quiz-game">
+    <div class="quiz-container">
+        <header class="quiz-header">
+            <h1>Cybersecurity Quiz</h1>
+            <div class="quiz-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span class="progress-text" id="progressText">Question 1 of 15</span>
+            </div>
+            <div class="quiz-timer-wrap">
+                <div class="quiz-timer" id="quizTimer">
+                    <svg class="timer-ring" viewBox="0 0 44 44">
+                        <circle class="timer-ring-bg" cx="22" cy="22" r="18"/>
+                        <circle class="timer-ring-fill" id="timerRingFill" cx="22" cy="22" r="18"
+                                stroke-dasharray="113" stroke-dashoffset="0"/>
+                    </svg>
+                    <span class="timer-count" id="timerCount">15</span>
+                </div>
+            </div>
+            <div class="quiz-score">
+                <span class="score-label">Score:</span>
+                <span class="score-value" id="quizScore">0</span>
+            </div>
+        </header>
+
+        <main class="quiz-main">
+            <div class="question-container" id="questionContainer">
+                <div class="question-number" id="questionNumber">Question 1</div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options-container" id="optionsContainer">
+                    <!-- Options will be inserted dynamically -->
+                </div>
+                <button class="submit-btn" id="submitBtn" onclick="submitAnswer()" disabled>Submit Answer</button>
+            </div>
+
+            <div class="feedback-container" id="feedbackContainer" style="display: none;">
+                <div class="feedback-result" id="feedbackResult"></div>
+                <div class="feedback-explanation" id="feedbackExplanation"></div>
+                <div class="feedback-buttons">
+                    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next Question</button>
+                </div>
+            </div>
+
+            <div class="quiz-complete" id="quizComplete" style="display: none;">
+                <div class="completion-card">
+                    <h2>Quiz Complete!</h2>
+                    <div class="final-results">
+                        <div class="result-circle">
+                            <div class="percentage" id="finalPercentage">0%</div>
+                            <div class="result-label">Score</div>
+                        </div>
+                        <div class="result-details">
+                            <div class="result-item">
+                                <span class="result-value" id="correctCount">0</span>
+                                <span class="result-label">Correct</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-value" id="incorrectCount">0</span>
+                                <span class="result-label">Incorrect</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-value" id="totalQuestions">15</span>
+                                <span class="result-label">Total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="performance-message" id="performanceMessage"></div>
+                    <div class="completion-buttons">
+                        <button class="retake-btn" onclick="restartQuiz()">Retake Quiz</button>
+                        <button class="menu-btn results-nav-btn" onclick="goToResults()">See Full Report</button>
+                        <button class="menu-btn" onclick="goToMenu()">Main Menu</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="quiz-navigation">
+            <button class="nav-btn back-btn" onclick="goToMenu()">← Back to Menu</button>
+        </div>
+
+        <!-- Phishing mode prompt overlay -->
+        <div class="quiz-prompt-overlay" id="phishPrompt" style="display:none;">
+            <div class="quiz-prompt-card" style="border-color:#ff446688; background:linear-gradient(160deg,#1a0d1a,#120818);">
+                <div class="quiz-prompt-icon">🎣</div>
+                <h2 style="color:#ff4466;">Quiz Complete!</h2>
+                <div class="quiz-prompt-stats">
+                    <span id="phishPromptScore">Score: 0%</span>
+                </div>
+                <p>Want to sharpen your skills further with <strong style="color:#ff4466;">Phishing Mode</strong>?<br>
+                   Spot real vs fake emails and websites to complete your full cyber awareness report.</p>
+                <div class="quiz-prompt-buttons">
+                    <button class="prompt-yes-btn" style="background:linear-gradient(45deg,#ff2244,#8a1be2);" onclick="phishPromptYes()">Yes, Detect Phishing! →</button>
+                    <button class="prompt-no-btn" onclick="phishPromptNo()">No, See My Results</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data/questions.js"></script>
+    <script src="quiz.js"></script>
+</body>
+</html>

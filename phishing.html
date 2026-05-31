@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUTIO - Phishing Mode</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ── Page layout ── */
+        body.phishing-game {
+            background: radial-gradient(ellipse at top, #0d1b2a 0%, #050a12 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .phishing-hud {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px 0;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .phishing-hud-item { text-align: center; }
+        .phishing-hud-label { font-size: 0.6rem; color: #4477aa; letter-spacing: 2px; }
+        .phishing-hud-value { font-size: 1.1rem; color: #00ffff; font-weight: 700; text-shadow: 0 0 10px #00ffff88; }
+
+        /* ── Card arena ── */
+        .card-arena {
+            position: relative;
+            width: min(600px, 96vw);
+            height: min(560px, 74vh);
+            margin: 18px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Stack of ghost cards behind */
+        .ghost-card {
+            position: absolute;
+            width: 90%;
+            height: 92%;
+            background: rgba(10,20,40,0.5);
+            border: 1px solid #00ffff15;
+            border-radius: 18px;
+        }
+        .ghost-card:nth-child(1) { transform: translateY(12px) scale(0.95); z-index: 1; }
+        .ghost-card:nth-child(2) { transform: translateY(6px)  scale(0.975); z-index: 2; }
+
+        /* The active card */
+        .phishing-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(160deg, #0d1f36 0%, #071220 100%);
+            border: 1.5px solid #00ffff33;
+            border-radius: 18px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 30px rgba(0,255,255,0.06);
+            z-index: 10;
+            cursor: grab;
+            user-select: none;
+            overflow: hidden;
+            transition: box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+        }
+        .phishing-card.dragging { cursor: grabbing; transition: none; }
+        .phishing-card.swipe-left  { animation: swipeLeft  0.45s ease forwards; }
+        .phishing-card.swipe-right { animation: swipeRight 0.45s ease forwards; }
+
+        @keyframes swipeLeft {
+            to { transform: translateX(-160%) rotate(-28deg); opacity: 0; }
+        }
+        @keyframes swipeRight {
+            to { transform: translateX(160%)  rotate(28deg);  opacity: 0; }
+        }
+
+        /* Verdict stamp overlays */
+        .stamp-phishing, .stamp-safe {
+            position: absolute;
+            top: 22px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            padding: 6px 18px;
+            border-radius: 8px;
+            border: 3px solid;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+            transform: rotate(-18deg);
+            transition: opacity 0.12s;
+        }
+        .stamp-phishing { right: 22px; color: #ff2244; border-color: #ff2244; }
+        .stamp-safe     { left:  22px; color: #00ff66; border-color: #00ff66; transform: rotate(18deg); }
+
+        /* Card header bar */
+        .card-type-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid #00ffff18;
+        }
+        .card-type-icon { font-size: 1.3rem; }
+        .card-type-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: #4488aa;
+            letter-spacing: 3px;
+        }
+        .card-number {
+            margin-left: auto;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            color: #334455;
+        }
+
+        /* Card content area */
+        .card-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── EMAIL CARD STYLES ── */
+        .email-client {
+            background: #f0f2f5;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+        .email-toolbar {
+            background: #1a73e8;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .email-toolbar-icon { color: white; font-size: 1.1rem; }
+        .email-toolbar-title { color: white; font-size: 0.85rem; font-weight: bold; }
+        .email-header-area {
+            padding: 14px 18px 10px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .email-from { font-size: 0.78rem; color: #333; margin-bottom: 4px; }
+        .email-from span { color: #5f6368; }
+        .email-subject { font-size: 0.92rem; font-weight: bold; color: #1a1a1a; margin-bottom: 4px; }
+        .email-to { font-size: 0.72rem; color: #777; }
+        .email-body {
+            padding: 14px 18px;
+            background: white;
+            flex: 1;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #333;
+            overflow: hidden;
+        }
+        .email-link {
+            color: #1a73e8;
+            text-decoration: underline;
+            word-break: break-all;
+            font-size: 0.75rem;
+        }
+        .email-logo {
+            display: inline-block;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .email-cta {
+            display: inline-block;
+            margin: 8px 0;
+            padding: 8px 18px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .email-divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
+
+        /* ── WEBSITE CARD STYLES ── */
+        .browser-chrome {
+            background: #292a2d;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .browser-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #3c3e41;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .browser-dots { display: flex; gap: 5px; }
+        .browser-dot { width: 11px; height: 11px; border-radius: 50%; }
+        .browser-dot.red { background: #ff5f56; }
+        .browser-dot.yellow { background: #ffbd2e; }
+        .browser-dot.green { background: #27c93f; }
+        .browser-url-bar {
+            flex: 1;
+            background: #202124;
+            border-radius: 16px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .url-lock { font-size: 0.75rem; }
+        .url-lock.secure { color: #81c995; }
+        .url-lock.insecure { color: #f28b82; }
+        .url-text {
+            font-family: monospace;
+            font-size: 0.74rem;
+            color: #e8eaed;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .url-domain-highlight { color: #81c995; font-weight: bold; }
+        .url-domain-bad { color: #f28b82; font-weight: bold; }
+        .browser-body {
+            flex: 1;
+            overflow: hidden;
+            background: white;
+            position: relative;
+        }
+        /* Generic website render inside browser */
+        .site-render {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        .site-nav {
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8rem;
+        }
+        .site-logo-text { font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; }
+        .site-hero {
+            padding: 18px 20px 10px;
+            flex: 1;
+        }
+        .site-title { font-size: 1rem; font-weight: bold; margin-bottom: 8px; }
+        .site-subtitle { font-size: 0.72rem; color: #555; margin-bottom: 10px; line-height: 1.4; }
+        .site-form {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-top: 8px;
+        }
+        .site-form-label { font-size: 0.68rem; color: #555; margin-bottom: 3px; display: block; }
+        .site-form-field {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            margin-bottom: 6px;
+            background: white;
+            box-sizing: border-box;
+        }
+        .site-form-btn {
+            display: block;
+            width: 100%;
+            padding: 7px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            cursor: default;
+            color: white;
+        }
+        .site-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+
+        /* ── VERDICT AREA ── */
+        .verdict-area {
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            border-top: 1px solid #00ffff11;
+            background: rgba(0,0,0,0.35);
+        }
+        .verdict-btn {
+            flex: 1;
+            padding: 14px 0;
+            border-radius: 12px;
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .verdict-btn:active { transform: scale(0.95); }
+        .verdict-btn-icon { font-size: 1.6rem; }
+        .btn-phishing {
+            background: linear-gradient(135deg, #3a0010, #550018);
+            color: #ff4466;
+            border: 1.5px solid #ff244455;
+            box-shadow: 0 4px 18px rgba(255,36,68,0.15);
+        }
+        .btn-phishing:hover { box-shadow: 0 4px 28px rgba(255,36,68,0.35); transform: translateY(-2px); }
+        .btn-safe {
+            background: linear-gradient(135deg, #002a12, #003d1a);
+            color: #00ff66;
+            border: 1.5px solid #00ff6655;
+            box-shadow: 0 4px 18px rgba(0,255,102,0.1);
+        }
+        .btn-safe:hover { box-shadow: 0 4px 28px rgba(0,255,102,0.3); transform: translateY(-2px); }
+        .verdict-hint {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.58rem;
+            color: #334455;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        /* ── FEEDBACK TOAST ── */
+        .feedback-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.6);
+            background: rgba(0,0,10,0.95);
+            border-radius: 16px;
+            padding: 24px 32px;
+            text-align: center;
+            z-index: 999;
+            min-width: 280px;
+            max-width: 90vw;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            border: 2px solid #00ffff22;
+            box-shadow: 0 0 60px rgba(0,0,0,0.8);
+        }
+        .feedback-toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: none;
+        }
+        .feedback-toast .verdict-emoji { font-size: 3rem; margin-bottom: 8px; }
+        .feedback-toast .verdict-headline {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+        .feedback-toast .verdict-explanation {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.68rem;
+            color: #8899aa;
+            line-height: 1.55;
+            letter-spacing: 0.5px;
+        }
+        .feedback-toast .verdict-score-tag {
+            display: inline-block;
+            margin-top: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.72rem;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
+        /* ── GAME OVER SCREEN ── */
+        .phishing-gameover {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,10,0.93);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        .phishing-gameover.show { display: flex; }
+        .phishing-gameover-card {
+            background: linear-gradient(160deg, #0d1f36, #071220);
+            border: 1.5px solid #00ffff44;
+            border-radius: 20px;
+            padding: 36px 40px;
+            text-align: center;
+            max-width: 460px;
+            width: 92vw;
+            box-shadow: 0 0 60px rgba(0,255,255,0.1);
+            font-family: 'Orbitron', sans-serif;
+        }
+        .phishing-gameover-card h2 {
+            color: #00ffff;
+            font-size: 1.6rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px #00ffff88;
+            margin-bottom: 6px;
+        }
+        .phishing-gameover-card .go-subtitle {
+            color: #4477aa;
+            font-size: 0.68rem;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+        }
+        .go-stat { margin: 10px 0; }
+        .go-stat-label { color: #4477aa; font-size: 0.65rem; letter-spacing: 2px; }
+        .go-stat-value { color: #00ffcc; font-size: 1.3rem; font-weight: 700; }
+        .go-accuracy {
+            margin: 18px 0;
+            padding: 14px;
+            background: rgba(0,255,200,0.05);
+            border: 1px solid #00ffcc22;
+            border-radius: 10px;
+        }
+        .go-accuracy-label { color: #4477aa; font-size: 0.6rem; letter-spacing: 2px; margin-bottom: 6px; }
+        .go-bar-track {
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px;
+            height: 8px;
+            overflow: hidden;
+            margin: 6px 0;
+        }
+        .go-bar-fill { height: 100%; border-radius: 20px; transition: width 0.8s ease; }
+        .go-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: center; }
+        .go-btn {
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .go-btn:hover { transform: translateY(-2px); }
+        .go-btn-play { background: linear-gradient(135deg, #004466, #006688); color: #00ffff; border: 1px solid #00ffff44; }
+        .go-btn-menu { background: rgba(255,255,255,0.05); color: #8899aa; border: 1px solid #ffffff11; }
+        .go-btn-results { background: linear-gradient(135deg, #002200, #003300); color: #00ff66; border: 1px solid #00ff6644; }
+
+        /* ── INTRO / START SCREEN ── */
+        .phishing-start {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,10,0.96);
+            z-index: 9500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .phishing-start-card {
+            background: linear-gradient(160deg, #0d1f36, #071220);
+            border: 1.5px solid #00ffff44;
+            border-radius: 20px;
+            padding: 36px 40px;
+            text-align: center;
+            max-width: 480px;
+            width: 92vw;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .phishing-start-card .start-icon { font-size: 3.5rem; margin-bottom: 14px; }
+        .phishing-start-card h2 {
+            color: #00ffff;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px #00ffff88;
+            margin-bottom: 8px;
+        }
+        .phishing-start-card p {
+            color: #6688aa;
+            font-size: 0.7rem;
+            line-height: 1.7;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+        .phishing-start-card .start-rules {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #00ffff18;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+        .phishing-start-card .start-rules li {
+            color: #8899bb;
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+            line-height: 1.8;
+        }
+        .phishing-start-btn {
+            background: linear-gradient(135deg, #003355, #004477);
+            border: 1.5px solid #00ffff66;
+            border-radius: 12px;
+            color: #00ffff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 14px 36px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: box-shadow 0.15s, transform 0.12s;
+        }
+        .phishing-start-btn:hover { box-shadow: 0 0 30px #00ffff44; transform: translateY(-2px); }
+
+        /* Swipe hint arrows */
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .swipe-hint.left  { left: 10px;  color: #00ff66; }
+        .swipe-hint.right { right: 10px; color: #ff4466; }
+    </style>
+</head>
+<body class="phishing-game">
+    <div class="stars"></div>
+
+    <!-- ── START SCREEN ── -->
+    <div class="phishing-start" id="startScreen">
+        <div class="phishing-start-card">
+            <div class="start-icon">🎣</div>
+            <h2>PHISHING MODE</h2>
+            <p>You'll be shown emails and websites.<br>Decide: is it a phishing attempt or is it safe?</p>
+            <div class="start-rules">
+                <ul>
+                    <li>✅ &nbsp; Click <b>SAFE</b> or swipe right if it looks legitimate</li>
+                    <li>🚨 &nbsp; Click <b>PHISHING</b> or swipe left if it's an attack</li>
+                    <li>💡 &nbsp; Each card explains why after your answer</li>
+                    <li>⭐ &nbsp; +150 pts per correct answer</li>
+                </ul>
+            </div>
+            <button class="phishing-start-btn" onclick="startPhishing()">START TRAINING →</button>
+        </div>
+    </div>
+
+    <!-- ── HUD ── -->
+    <div class="phishing-hud">
+        <div class="phishing-hud-item">
+            <div class="phishing-hud-label">SCORE</div>
+            <div class="phishing-hud-value" id="hudScore">0</div>
+        </div>
+        <div class="phishing-hud-item">
+            <div class="phishing-hud-label">CARD</div>
+            <div class="phishing-hud-value" id="hudCard">0 / 15</div>
+        </div>
+        <div class="phishing-hud-item">
+            <div class="phishing-hud-label">CORRECT</div>
+            <div class="phishing-hud-value" id="hudCorrect">0</div>
+        </div>
+    </div>
+
+    <!-- ── CARD ARENA ── -->
+    <div class="card-arena" id="cardArena">
+        <div class="ghost-card"></div>
+        <div class="ghost-card"></div>
+        <!-- Active card injected here by JS -->
+        <div class="swipe-hint left">◀ SAFE</div>
+        <div class="swipe-hint right">PHISHING ▶</div>
+    </div>
+
+    <!-- ── FEEDBACK TOAST ── -->
+    <div class="feedback-toast" id="feedbackToast">
+        <div class="verdict-emoji" id="toastEmoji">✅</div>
+        <div class="verdict-headline" id="toastHeadline">CORRECT!</div>
+        <div class="verdict-explanation" id="toastExplanation"></div>
+        <div class="verdict-score-tag" id="toastScore">+150</div>
+    </div>
+
+    <!-- ── GAME OVER ── -->
+    <div class="phishing-gameover" id="gameoverScreen">
+        <div class="phishing-gameover-card">
+            <h2>TRAINING COMPLETE</h2>
+            <div class="go-subtitle">PHISHING DETECTION REPORT</div>
+            <div class="go-stat">
+                <div class="go-stat-label">FINAL SCORE</div>
+                <div class="go-stat-value" id="goScore">0</div>
+            </div>
+            <div class="go-accuracy">
+                <div class="go-accuracy-label">DETECTION ACCURACY</div>
+                <div class="go-bar-track">
+                    <div class="go-bar-fill" id="goBar" style="width:0%"></div>
+                </div>
+                <div class="go-stat-value" id="goAccuracy" style="font-size:1.1rem">0%</div>
+            </div>
+            <div class="go-stat">
+                <div class="go-stat-label">CORRECT ANSWERS</div>
+                <div class="go-stat-value" id="goCorrect">0 / 15</div>
+            </div>
+            <div class="go-actions">
+                <button class="go-btn go-btn-play" onclick="restartPhishing()">▶ PLAY AGAIN</button>
+                <button class="go-btn go-btn-results" onclick="goResults()">📊 RESULTS</button>
+                <button class="go-btn go-btn-menu" onclick="goMenu()">⌂ MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ══════════════════════════════════════════════════════════════════════════
+    // PHISHING CARD DATA — 7 emails + 8 websites = 15 cards, always shuffled
+    // isPhishing: true = phishing attack, false = legitimate
+    // ══════════════════════════════════════════════════════════════════════════
+    const PHISHING_CARDS = [
+
+        // ─── EMAILS (7) ───────────────────────────────────────────────────────
+        {
+            id: 'e1', type: 'email', isPhishing: true,
+            email: {
+                from: 'security-alert@paypa1-support.com',
+                subject: '⚠️ Your PayPal account has been SUSPENDED',
+                to: 'you@email.com',
+                logo: { text: 'PayPal', color: '#003087', bg: '#ffffff' },
+                body: `Dear Valued Customer,\n\nWe have detected unusual activity on your account. Your account has been temporarily suspended for your protection.\n\nTo restore access, please verify your information immediately:`,
+                cta: { text: 'VERIFY ACCOUNT NOW', color: '#003087', bg: '#ffc439' },
+                link: 'http://paypa1-secure-verify.xyz/account/confirm?token=8f2k',
+                footer: 'PayPal Security Team • 2211 North First Street, San Jose'
+            },
+            explanation: 'The sender domain is "paypa1-support.com" — the letter "l" is replaced with "1". The link goes to a suspicious .xyz domain, not paypal.com. Urgency and threats are classic phishing tactics.'
+        },
+        {
+            id: 'e2', type: 'email', isPhishing: false,
+            email: {
+                from: 'noreply@github.com',
+                subject: 'Your two-factor authentication code',
+                to: 'you@email.com',
+                logo: { text: 'GitHub', color: '#ffffff', bg: '#24292f' },
+                body: `Hi there,\n\nYour authentication code for GitHub is:\n`,
+                code: '847 291',
+                footer2: 'This code expires in 15 minutes. If you did not request this, please secure your account at github.com/settings/security',
+                footer: 'GitHub, Inc. • 88 Colin P Kelly Jr St, San Francisco'
+            },
+            explanation: 'This is a legitimate 2FA code email from github.com. It contains no links to click, doesn\'t ask for passwords, and comes from the official GitHub domain. Legitimate 2FA emails never ask you to click links.'
+        },
+        {
+            id: 'e3', type: 'email', isPhishing: true,
+            email: {
+                from: 'itdepartment@your-company-helpdesk.net',
+                subject: 'ACTION REQUIRED: Password expires in 24 hours',
+                to: 'all-staff@company.com',
+                logo: { text: '🖥️ IT Helpdesk', color: '#0078d4', bg: '#f0f6ff' },
+                body: `Hello Employee,\n\nYour company password will expire in 24 hours. Failure to update will result in account lockout and productivity loss.\n\nClick below to reset your password immediately:`,
+                cta: { text: 'RESET PASSWORD NOW', color: '#ffffff', bg: '#0078d4' },
+                link: 'http://company-password-reset.free-site-builder.com/reset',
+                footer: 'IT Department • Automated Security System'
+            },
+            explanation: 'Red flags: sent to all-staff (mass phishing), from a free external domain not your company\'s, link goes to a free site builder domain. Legitimate IT departments use internal systems, not external free websites.'
+        },
+        {
+            id: 'e4', type: 'email', isPhishing: false,
+            email: {
+                from: 'receipts@amazon.com',
+                subject: 'Your Amazon order #114-8827341-9934521 has shipped',
+                to: 'you@email.com',
+                logo: { text: 'amazon', color: '#232f3e', bg: '#ff9900' },
+                body: `Hello,\n\nYour order has shipped and is on its way!\n\nOrder #114-8827341-9934521\nWireless Keyboard — £34.99\nEstimated delivery: Thursday, 2 June\n\nTrack your package at amazon.com/orders`,
+                footer: 'Amazon.com, Inc. • 410 Terry Ave N, Seattle, WA'
+            },
+            explanation: 'This is a legitimate Amazon shipping confirmation. It comes from receipts@amazon.com, doesn\'t ask for credentials, references a specific order number, and directs you to amazon.com directly (not a link).'
+        },
+        {
+            id: 'e5', type: 'email', isPhishing: true,
+            email: {
+                from: 'prize-winner@microsoft-lottery-2026.com',
+                subject: '🎉 Congratulations! You won £850,000 — CLAIM NOW',
+                to: 'you@email.com',
+                logo: { text: '⊞ Microsoft Lottery', color: '#f25022', bg: '#ffffff' },
+                body: `CONGRATULATIONS!\n\nYou have been selected as the winner of the Microsoft Annual User Lottery 2026. Your prize: £850,000.\n\nTo claim your prize, send us your full name, address, phone number and bank details to claim@ms-prizes.net within 48 hours or your prize will be forfeited.`,
+                cta: { text: 'CLAIM YOUR PRIZE', color: '#ffffff', bg: '#f25022' },
+                link: 'mailto:claim@ms-prizes.net',
+                footer: 'Microsoft Lottery Division • Not affiliated with Microsoft Corporation'
+            },
+            explanation: 'Microsoft does not run a lottery. Classic advance-fee fraud: creates urgency, requests personal and bank data, uses a fake domain. The footer even admits it\'s "not affiliated with Microsoft". Legitimate companies never ask for bank details via email.'
+        },
+        {
+            id: 'e6', type: 'email', isPhishing: false,
+            email: {
+                from: 'security@google.com',
+                subject: 'New sign-in on Windows from London, UK',
+                to: 'you@email.com',
+                logo: { text: 'Google', color: '#4285F4', bg: '#ffffff' },
+                body: `A new sign-in to your Google Account was just detected.\n\nWhen: Today at 14:32 BST\nDevice: Windows PC\nLocation: London, United Kingdom\n\nIf this was you, no action is needed. If you don't recognise this activity, secure your account at myaccount.google.com`,
+                footer: 'Google LLC • 1600 Amphitheatre Parkway, Mountain View, CA'
+            },
+            explanation: 'This is a standard Google security alert from security@google.com. It doesn\'t ask you to click a link or enter credentials — it directs you to type the URL yourself. Legitimate alerts give information without demanding immediate clicks.'
+        },
+        {
+            id: 'e7', type: 'email', isPhishing: true,
+            email: {
+                from: 'noreply@netfl1x-billing.support',
+                subject: 'Your Netflix subscription payment failed',
+                to: 'you@email.com',
+                logo: { text: 'NETFLIX', color: '#e50914', bg: '#000000' },
+                body: `We were unable to process your monthly subscription payment.\n\nYour account will be cancelled in 24 hours unless you update your billing information.\n\nMembership plan: Premium (4K)\nAmount due: £15.99`,
+                cta: { text: 'UPDATE PAYMENT INFO', color: '#ffffff', bg: '#e50914' },
+                link: 'https://netfl1x-billing.support/account/payment-update',
+                footer: 'Netflix Services • 100 Winchester Circle, Los Gatos'
+            },
+            explanation: 'The domain "netfl1x-billing.support" replaces the "i" with "1". Netflix emails always come from @netflix.com. The urgent "24 hours" deadline and payment link are pressure tactics. Always go directly to netflix.com rather than clicking email links.'
+        },
+
+        // ─── WEBSITES (8) ─────────────────────────────────────────────────────
+        {
+            id: 'w1', type: 'website', isPhishing: true,
+            site: {
+                url: 'http://secure-bank0famerica.verify-login.xyz/signin',
+                secure: false,
+                navBg: '#004879', logoColor: '#ffffff', logoText: 'Bank of America',
+                title: 'Sign In to Online Banking',
+                subtitle: 'Your security is our priority. Please verify your credentials.',
+                badge: { text: '🔒 SECURE LOGIN', bg: '#004879', color: '#ffffff' },
+                formFields: ['Online ID', 'Passcode'],
+                btnText: 'Sign In', btnColor: '#e31837',
+                hint: 'Protect your account — verify identity every 30 days.'
+            },
+            explanation: 'The URL uses "bank0famerica" (zero instead of O) and the domain is "verify-login.xyz" — NOT bankofamerica.com. The connection is HTTP (not HTTPS). Legitimate banks always use their own domain with HTTPS.'
+        },
+        {
+            id: 'w2', type: 'website', isPhishing: false,
+            site: {
+                url: 'https://www.bbc.co.uk/news/technology-67234891',
+                secure: true,
+                navBg: '#bb1919', logoColor: '#ffffff', logoText: 'BBC NEWS',
+                title: 'Cyber attacks on UK firms up 40% in 2025',
+                subtitle: 'A new government report shows that businesses faced a record number of cyber incidents last year, with phishing attacks accounting for the majority of breaches.',
+                badge: null,
+                formFields: [],
+                btnText: null,
+                hint: 'Published: 29 May 2026 • Technology'
+            },
+            explanation: 'This is a legitimate BBC News article at bbc.co.uk over HTTPS. News sites don\'t ask for credentials. The URL structure, domain, and HTTPS padlock are all consistent with a real BBC page.'
+        },
+        {
+            id: 'w3', type: 'website', isPhishing: true,
+            site: {
+                url: 'https://apple-id.account-recovery-portal.com/verify',
+                secure: true,
+                navBg: '#1d1d1f', logoColor: '#f5f5f7', logoText: '🍎 Apple',
+                title: 'Apple ID Verification Required',
+                subtitle: 'Your Apple ID has been flagged for unusual sign-in activity. Verify your account to restore full access and prevent permanent suspension.',
+                badge: { text: '⚠️ ACCOUNT AT RISK', bg: '#ff3b30', color: '#ffffff' },
+                formFields: ['Apple ID (Email)', 'Password', 'Credit Card Number'],
+                btnText: 'Verify & Continue', btnColor: '#0071e3',
+                hint: 'Apple Support • Help Centre • Privacy Policy'
+            },
+            explanation: 'The domain is "account-recovery-portal.com" — Apple\'s real domain is apple.com. Asking for your credit card number during "account verification" is a major red flag. Apple never requests payment info via web forms unrelated to purchases.'
+        },
+        {
+            id: 'w4', type: 'website', isPhishing: false,
+            site: {
+                url: 'https://github.com/login',
+                secure: true,
+                navBg: '#24292f', logoColor: '#f0f6fc', logoText: '⬡ GitHub',
+                title: 'Sign in to GitHub',
+                subtitle: 'The world\'s leading software development platform.',
+                badge: null,
+                formFields: ['Username or email address', 'Password'],
+                btnText: 'Sign in', btnColor: '#238636',
+                hint: 'New to GitHub? Create an account · Forgot password?'
+            },
+            explanation: 'This is the legitimate GitHub login page at github.com over HTTPS. The URL exactly matches GitHub\'s official domain. The form only asks for username/email and password — standard for any login page.'
+        },
+        {
+            id: 'w5', type: 'website', isPhishing: true,
+            site: {
+                url: 'http://paypal.com.user-session-verify.tk/login',
+                secure: false,
+                navBg: '#003087', logoColor: '#ffffff', logoText: 'PayPal',
+                title: 'Log in to your account',
+                subtitle: 'Welcome back! Verify your session to continue.',
+                badge: { text: '🔐 256-bit encryption', bg: '#eaf0fb', color: '#003087' },
+                formFields: ['Email or mobile number', 'Password'],
+                btnText: 'Log In', btnColor: '#0070ba',
+                hint: 'Having trouble logging in? Contact Support'
+            },
+            explanation: 'The actual domain here is "user-session-verify.tk" — "paypal.com" is just a subdomain prefix to fool you. The connection is HTTP (no padlock). PayPal always uses paypal.com with HTTPS. Always check the LAST domain before the first slash.'
+        },
+        {
+            id: 'w6', type: 'website', isPhishing: false,
+            site: {
+                url: 'https://www.amazon.co.uk/dp/B08N5WRWNW',
+                secure: true,
+                navBg: '#232f3e', logoColor: '#ff9900', logoText: 'amazon',
+                title: 'Kindle Paperwhite (16 GB) — Now with adjustable warm light',
+                subtitle: '★★★★☆  12,847 ratings  |  #1 Best Seller in eReaders\n\nPrice: £149.99 · FREE delivery Saturday, 1 June',
+                badge: { text: '✓ Dispatched from Amazon', bg: '#f5f5f5', color: '#555' },
+                formFields: [],
+                btnText: 'Add to Basket', btnColor: '#ffa41c',
+                hint: 'Sold by Amazon.co.uk · Secure transaction'
+            },
+            explanation: 'This is a legitimate Amazon product page at amazon.co.uk over HTTPS. It shows a product listing (not a credential form), uses Amazon\'s official domain, and has a valid HTTPS connection.'
+        },
+        {
+            id: 'w7', type: 'website', isPhishing: true,
+            site: {
+                url: 'https://microsoft-office365.login-renew.co/verify-subscription',
+                secure: true,
+                navBg: '#0067b8', logoColor: '#ffffff', logoText: '⊞ Microsoft 365',
+                title: 'Your Microsoft 365 subscription has expired',
+                subtitle: 'Renew now to avoid losing access to your files, emails, and OneDrive. Enter your Microsoft credentials to reactivate your subscription.',
+                badge: { text: '⚠️ SUBSCRIPTION EXPIRED', bg: '#d83b01', color: '#ffffff' },
+                formFields: ['Microsoft email address', 'Password', 'Credit/Debit Card'],
+                btnText: 'Renew Subscription', btnColor: '#0067b8',
+                hint: 'Secure Payment · Microsoft Verified · 30-day money back'
+            },
+            explanation: 'The domain is "login-renew.co" — Microsoft\'s real domain is microsoft.com. Although it has HTTPS (attackers can get free SSL certs), the domain is completely wrong. Asking for both credentials and payment details together is an extreme red flag.'
+        },
+        {
+            id: 'w8', type: 'website', isPhishing: false,
+            site: {
+                url: 'https://accounts.google.com/signin/v2/identifier',
+                secure: true,
+                navBg: '#ffffff', logoColor: '#4285F4', logoText: 'Google',
+                title: 'Sign in',
+                subtitle: 'Use your Google Account',
+                badge: null,
+                formFields: ['Email or phone'],
+                btnText: 'Next', btnColor: '#1a73e8',
+                hint: 'Forgot email? · Create account · Guest mode'
+            },
+            explanation: 'This is Google\'s real sign-in page at accounts.google.com over HTTPS. The domain "google.com" is correct, HTTPS is valid, and only one field is shown at a time (standard Google login flow).'
+        }
+    ];
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // GAME STATE
+    // ══════════════════════════════════════════════════════════════════════════
+    let deck = [];
+    let currentIndex = 0;
+    let score = 0;
+    let correct = 0;
+    let total = 0;
+    let answering = false;
+    let activeCard = null;
+
+    // Drag state
+    let dragStartX = 0, dragStartY = 0, dragCurX = 0, dragging = false;
+
+    function startPhishing() {
+        document.getElementById('startScreen').style.display = 'none';
+        // Shuffle deck
+        deck = [...PHISHING_CARDS].sort(() => Math.random() - 0.5);
+        currentIndex = 0; score = 0; correct = 0; total = 0; answering = false;
+        updateHUD();
+        showCard();
+    }
+
+    function restartPhishing() {
+        document.getElementById('gameoverScreen').classList.remove('show');
+        deck = [...PHISHING_CARDS].sort(() => Math.random() - 0.5);
+        currentIndex = 0; score = 0; correct = 0; total = 0; answering = false;
+        updateHUD();
+        showCard();
+    }
+
+    function goMenu() { sessionStorage.setItem('cautio-returning','1'); window.location.href='index.html'; }
+    function goResults() { window.location.href='results.html'; }
+
+    function updateHUD() {
+        document.getElementById('hudScore').textContent = score.toLocaleString();
+        document.getElementById('hudCard').textContent  = `${Math.min(currentIndex+1, deck.length)} / ${deck.length}`;
+        document.getElementById('hudCorrect').textContent = correct;
+    }
+
+    // ── CARD RENDERING ────────────────────────────────────────────────────────
+
+    function showCard() {
+        const arena = document.getElementById('cardArena');
+        // Remove old active card
+        const old = arena.querySelector('.phishing-card');
+        if (old) old.remove();
+
+        if (currentIndex >= deck.length) { endGame(); return; }
+
+        const cardData = deck[currentIndex];
+        const el = buildCard(cardData);
+        arena.appendChild(el);
+        activeCard = el;
+
+        // Setup drag
+        setupDrag(el);
+        updateHUD();
+    }
+
+    function buildCard(data) {
+        const card = document.createElement('div');
+        card.className = 'phishing-card';
+
+        // Verdict stamps
+        const stampP = document.createElement('div');
+        stampP.className = 'stamp-phishing';
+        stampP.textContent = '🚨 PHISHING';
+        card.appendChild(stampP);
+
+        const stampS = document.createElement('div');
+        stampS.className = 'stamp-safe';
+        stampS.textContent = '✅ SAFE';
+        card.appendChild(stampS);
+
+        // Type bar
+        const bar = document.createElement('div');
+        bar.className = 'card-type-bar';
+        bar.innerHTML = `
+            <span class="card-type-icon">${data.type === 'email' ? '📧' : '🌐'}</span>
+            <span class="card-type-label">${data.type === 'email' ? 'EMAIL MESSAGE' : 'WEBSITE'}</span>
+            <span class="card-number">${currentIndex + 1} of ${deck.length}</span>
+        `;
+        card.appendChild(bar);
+
+        // Content
+        const content = document.createElement('div');
+        content.className = 'card-content';
+        content.innerHTML = data.type === 'email' ? buildEmailHTML(data.email) : buildSiteHTML(data.site);
+        card.appendChild(content);
+
+        // Verdict buttons
+        const va = document.createElement('div');
+        va.className = 'verdict-area';
+        va.innerHTML = `
+            <button class="verdict-btn btn-safe" onclick="submitVerdict(false)">
+                <span class="verdict-btn-icon">✅</span>
+                <span>SAFE</span>
+            </button>
+            <div class="verdict-hint">Swipe or click</div>
+            <button class="verdict-btn btn-phishing" onclick="submitVerdict(true)">
+                <span class="verdict-btn-icon">🚨</span>
+                <span>PHISHING</span>
+            </button>
+        `;
+        card.appendChild(va);
+
+        return card;
+    }
+
+    function buildEmailHTML(e) {
+        const logoStyle = `background:${e.logo.bg||'#fff'}; color:${e.logo.color||'#000'}; padding:4px 10px; border-radius:4px; font-weight:900;`;
+        let bodyHTML = `<div class="email-logo" style="${logoStyle}">${e.logo.text}</div><br>`;
+        bodyHTML += (e.body || '').replace(/\n/g, '<br>');
+        if (e.code) {
+            bodyHTML += `<div style="font-size:1.6rem; font-weight:900; letter-spacing:6px; color:#1a1a1a; margin:10px 0;">${e.code}</div>`;
+        }
+        if (e.cta) {
+            bodyHTML += `<br><a class="email-cta" style="background:${e.cta.bg};color:${e.cta.color};">${e.cta.text}</a>`;
+        }
+        if (e.link) {
+            bodyHTML += `<br><span class="email-link">${e.link}</span>`;
+        }
+        if (e.footer2) {
+            bodyHTML += `<hr class="email-divider"><span style="font-size:0.68rem;color:#777;">${e.footer2}</span>`;
+        }
+
+        return `
+        <div class="email-client">
+            <div class="email-toolbar">
+                <span class="email-toolbar-icon">✉</span>
+                <span class="email-toolbar-title">Mail</span>
+            </div>
+            <div class="email-header-area">
+                <div class="email-from">From: <span>${escHtml(e.from)}</span></div>
+                <div class="email-subject">${escHtml(e.subject)}</div>
+                <div class="email-to">To: ${escHtml(e.to)}</div>
+            </div>
+            <div class="email-body">${bodyHTML}<hr class="email-divider"><span style="font-size:0.63rem;color:#999;">${escHtml(e.footer||'')}</span></div>
+        </div>`;
+    }
+
+    function buildSiteHTML(s) {
+        const lockIcon = s.secure ? '🔒' : '⚠️';
+        const lockClass = s.secure ? 'secure' : 'insecure';
+
+        // Highlight domain in URL
+        let urlDisplay = escHtml(s.url);
+        try {
+            const u = new URL(s.url);
+            const host = u.hostname;
+            const isGood = s.isPhishing === false; // we'll highlight differently
+            const cls = s.isPhishing ? 'url-domain-bad' : 'url-domain-highlight';
+            urlDisplay = escHtml(s.url).replace(escHtml(host), `<span class="${cls}">${escHtml(host)}</span>`);
+        } catch(e) {}
+
+        let formHTML = '';
+        if (s.formFields && s.formFields.length) {
+            formHTML = '<div class="site-form">';
+            s.formFields.forEach(f => {
+                formHTML += `<label class="site-form-label">${escHtml(f)}</label>
+                <input class="site-form-field" type="text" placeholder=" " readonly>`;
+            });
+            if (s.btnText) {
+                formHTML += `<button class="site-form-btn" style="background:${s.btnColor};" disabled>${escHtml(s.btnText)}</button>`;
+            }
+            formHTML += '</div>';
+        } else if (s.btnText) {
+            formHTML = `<button class="site-form-btn" style="background:${s.btnColor}; margin-top:10px;" disabled>${escHtml(s.btnText)}</button>`;
+        }
+
+        const badgeHTML = s.badge
+            ? `<span class="site-badge" style="background:${s.badge.bg};color:${s.badge.color};">${s.badge.text}</span><br>`
+            : '';
+
+        return `
+        <div class="browser-chrome">
+            <div class="browser-bar">
+                <div class="browser-dots">
+                    <div class="browser-dot red"></div>
+                    <div class="browser-dot yellow"></div>
+                    <div class="browser-dot green"></div>
+                </div>
+                <div class="browser-url-bar">
+                    <span class="url-lock ${lockClass}">${lockIcon}</span>
+                    <span class="url-text">${urlDisplay}</span>
+                </div>
+            </div>
+            <div class="browser-body">
+                <div class="site-render">
+                    <div class="site-nav" style="background:${s.navBg};">
+                        <span class="site-logo-text" style="color:${s.logoColor};">${escHtml(s.logoText)}</span>
+                    </div>
+                    <div class="site-hero">
+                        <div class="site-title">${escHtml(s.title)}</div>
+                        ${badgeHTML}
+                        <div class="site-subtitle">${escHtml(s.subtitle||'').replace(/\n/g,'<br>')}</div>
+                        ${formHTML}
+                        ${s.hint ? `<div style="font-size:0.62rem;color:#888;margin-top:8px;">${escHtml(s.hint)}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ── VERDICT ───────────────────────────────────────────────────────────────
+
+    function submitVerdict(playerSaysPhishing) {
+        if (answering) return;
+        answering = true;
+
+        const data = deck[currentIndex];
+        const isCorrect = (playerSaysPhishing === data.isPhishing);
+
+        total++;
+        if (isCorrect) { correct++; score += 150; }
+
+        // Show stamp on card
+        if (activeCard) {
+            const stamp = activeCard.querySelector(playerSaysPhishing ? '.stamp-phishing' : '.stamp-safe');
+            if (stamp) stamp.style.opacity = '1';
+        }
+
+        showFeedback(isCorrect, data, playerSaysPhishing);
+    }
+
+    function showFeedback(isCorrect, data, playerSaysPhishing) {
+        const toast = document.getElementById('feedbackToast');
+        const correct_val = data.isPhishing;
+
+        document.getElementById('toastEmoji').textContent = isCorrect ? (data.isPhishing ? '🚨' : '✅') : '❌';
+        document.getElementById('toastHeadline').textContent = isCorrect ? 'CORRECT!' : 'WRONG!';
+        document.getElementById('toastHeadline').style.color = isCorrect ? '#00ff66' : '#ff4466';
+        document.getElementById('toastExplanation').textContent = data.explanation;
+
+        const scoreTag = document.getElementById('toastScore');
+        scoreTag.textContent = isCorrect ? '+150 pts' : '0 pts';
+        scoreTag.style.background = isCorrect ? 'rgba(0,255,100,0.15)' : 'rgba(255,50,70,0.15)';
+        scoreTag.style.color = isCorrect ? '#00ff66' : '#ff4466';
+        scoreTag.style.border = `1px solid ${isCorrect ? '#00ff6644' : '#ff446644'}`;
+
+        updateHUD();
+        toast.classList.add('show');
+
+        // Swipe card away
+        if (activeCard) {
+            activeCard.classList.add(playerSaysPhishing ? 'swipe-right' : 'swipe-left');
+        }
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            currentIndex++;
+            answering = false;
+            showCard();
+        }, 2600);
+    }
+
+    // ── DRAG TO SWIPE ─────────────────────────────────────────────────────────
+
+    function setupDrag(card) {
+        const onStart = (x, y) => {
+            if (answering) return;
+            dragging = true;
+            dragStartX = x; dragStartY = y; dragCurX = x;
+            card.classList.add('dragging');
+        };
+        const onMove = (x) => {
+            if (!dragging || answering) return;
+            dragCurX = x;
+            const dx = dragCurX - dragStartX;
+            const rot = dx * 0.08;
+            card.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+
+            // Show stamps based on drag direction
+            const stampP = card.querySelector('.stamp-phishing');
+            const stampS = card.querySelector('.stamp-safe');
+            stampP.style.opacity = dx > 30 ? Math.min(1, (dx-30)/60) : '0';
+            stampS.style.opacity = dx < -30 ? Math.min(1, (-dx-30)/60) : '0';
+        };
+        const onEnd = () => {
+            if (!dragging) return;
+            dragging = false;
+            card.classList.remove('dragging');
+            const dx = dragCurX - dragStartX;
+            if (dx > 80) {
+                submitVerdict(true);  // swipe right = phishing
+            } else if (dx < -80) {
+                submitVerdict(false); // swipe left = safe
+            } else {
+                card.style.transform = '';
+                card.querySelector('.stamp-phishing').style.opacity = '0';
+                card.querySelector('.stamp-safe').style.opacity = '0';
+            }
+        };
+
+        card.addEventListener('mousedown',  e => onStart(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => onMove(e.clientX));
+        window.addEventListener('mouseup',   onEnd);
+        card.addEventListener('touchstart',  e => onStart(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+        window.addEventListener('touchmove',  e => onMove(e.touches[0].clientX), {passive:true});
+        window.addEventListener('touchend',   onEnd);
+    }
+
+    // ── GAME OVER ─────────────────────────────────────────────────────────────
+
+    function endGame() {
+        const pct = deck.length > 0 ? Math.round((correct / deck.length) * 100) : 0;
+        const barColor = pct >= 70 ? '#00ff66' : pct >= 40 ? '#ffaa00' : '#ff4466';
+
+        document.getElementById('goScore').textContent   = score.toLocaleString();
+        document.getElementById('goCorrect').textContent = `${correct} / ${deck.length}`;
+        document.getElementById('goAccuracy').textContent = pct + '%';
+        document.getElementById('goAccuracy').style.color = barColor;
+
+        const bar = document.getElementById('goBar');
+        bar.style.background = barColor;
+        bar.style.boxShadow  = `0 0 10px ${barColor}`;
+        setTimeout(() => { bar.style.width = pct + '%'; }, 300);
+
+        // Save result to localStorage
+        localStorage.setItem('cautio-phishing-result', JSON.stringify({
+            score, correct, total: deck.length, percentage: pct
+        }));
+
+        // Update leaderboard
+        saveToLeaderboard();
+
+        document.getElementById('gameoverScreen').classList.add('show');
+    }
+
+    function saveToLeaderboard() {
+        const LB_KEY = 'cautio-leaderboard';
+        const username = localStorage.getItem('cautio-username') || 'Agent';
+        let entries = [];
+        try { entries = JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch(e){}
+        const runnerResult  = JSON.parse(localStorage.getItem('cautio-runner-result')   || 'null');
+        const quizResult    = JSON.parse(localStorage.getItem('cautio-quiz-result')     || 'null');
+        const phishResult   = JSON.parse(localStorage.getItem('cautio-phishing-result') || 'null');
+        const runnerScore   = runnerResult ? runnerResult.score : 0;
+        const quizPct       = quizResult   ? quizResult.percentage : 0;
+        const phishPct      = phishResult  ? phishResult.percentage : 0;
+        const pcts = [];
+        if (runnerResult && runnerResult.total > 0) pcts.push(Math.round(runnerResult.correct/runnerResult.total*100));
+        if (quizResult)   pcts.push(quizPct);
+        if (phishResult)  pcts.push(phishPct);
+        const avg = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : 0;
+        const level = avg >= 70 ? 'Expert' : avg >= 40 ? 'Medium' : 'Beginner';
+        const idx = entries.findIndex(e => e.name.toLowerCase() === username.toLowerCase());
+        const entry = { name: username, runnerScore, quizPct, phishPct, level, date: new Date().toLocaleDateString() };
+        if (idx >= 0) {
+            entry.runnerScore = Math.max(entry.runnerScore, entries[idx].runnerScore || 0);
+            entry.quizPct     = Math.max(entry.quizPct,    entries[idx].quizPct    || 0);
+            entry.phishPct    = Math.max(entry.phishPct,   entries[idx].phishPct   || 0);
+            entries[idx] = entry;
+        } else { entries.push(entry); }
+        entries.sort((a,b) => (b.runnerScore + b.quizPct*10 + (b.phishPct||0)*10) - (a.runnerScore + a.quizPct*10 + (a.phishPct||0)*10));
+        localStorage.setItem(LB_KEY, JSON.stringify(entries.slice(0, 20)));
+    }
+
+    // ── UTILS ─────────────────────────────────────────────────────────────────
+
+    function escHtml(s) {
+        return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function createStars() {
+        const sc = document.querySelector('.stars');
+        if (!sc) return;
+        for (let i = 0; i < 80; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.style.left              = Math.random() * 100 + '%';
+            s.style.top               = Math.random() * 100 + '%';
+            s.style.animationDelay    = Math.random() * 3 + 's';
+            s.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            sc.appendChild(s);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { createStars(); });
+    </script>
+</body>
+</html>
